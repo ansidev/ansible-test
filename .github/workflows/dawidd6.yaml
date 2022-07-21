@@ -19,6 +19,9 @@ jobs:
         with:
           path: playbook_dawidd6.yaml
 
+      - name: Generate .known_hosts
+        run: ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} > .known_hosts
+
       - name: Run Ansible Playbook
         uses: dawidd6/action-ansible-playbook@v2.5.0
         with:
