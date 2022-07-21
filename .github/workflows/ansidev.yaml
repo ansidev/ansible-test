@@ -1,0 +1,45 @@
+name: ansidev/ansible-test
+on:
+  push:
+    branches:
+      - main
+
+env:
+  # Use the same ssh-agent socket value across all jobs
+  # Useful when a GH action is using SSH behind-the-scenes
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+jobs:
+  copy:
+    name: Copy file to server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run ansible-lint
+        # replace `main` with any valid ref, or tags like `v6`
+        uses: ansible-community/ansible-lint-action@main
+        # optional:
+        with:
+          path: playbook_ansidev.yaml
+
+      - name: Run Ansible Playbook
+        run: |
+          ssh-agent -a ${{ env.SSH_AUTH_SOCK }} > /dev/null
+          echo 'echo ${{ secrets.SSH_PASSPHRASE }}' > ~/.ssh_askpass && chmod +x ~/.ssh_askpass
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' | DISPLAY=None SSH_ASKPASS=~/.ssh_askpass ssh-add - > /dev/null
+
+          echo '${{ secrets.SSH_PRIVATE_KEY }}' > .ansible_key
+          chmod 0600 .ansible_key
+
+          echo '${{ secrets.VAULT_PASSWORD }}' > .ansible_vault_password
+
+          echo '[master]' > .ansible_inventory
+          echo '  master-01 ansible_host=${{ secrets.SSH_HOST }} ansible_port=${{ secrets.SSH_PORT }} ansible_user=${{ secrets.SSH_USER }}' >> .ansible_inventory
+
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} > .ansible_known_hosts
+
+          ansible-playbook playbook_ansidev.yaml --key-file .ansible_key -i .ansible_inventory --vault-password-file .ansible_vault_password --ssh-common-args='-o UserKnownHostsFile=.ansible_known_hosts' --verbose
+
+          echo "Done!"

@@ -1,0 +1,7 @@
+.vault_pass
+hosts
+Taskfile.yaml
+
+.ansible_inventory
+.ansible_key
+.ansible_vault_password

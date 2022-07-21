@@ -1,0 +1,8 @@
+- hosts: master
+  tasks:
+    - name: Copy dawidd6.txt to server
+      ansible.builtin.copy:
+        src: dawidd6.txt
+        dest: $HOME
+        mode: 0644
+      changed_when: false

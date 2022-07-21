@@ -1,0 +1,40 @@
+name: dawidd6/action-ansible-playbook
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  copy:
+    name: Copy file to server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run ansible-lint
+        # replace `main` with any valid ref, or tags like `v6`
+        uses: ansible-community/ansible-lint-action@main
+        # optional:
+        with:
+          path: playbook_dawidd6.yaml
+
+      - name: Run Ansible Playbook
+        uses: dawidd6/action-ansible-playbook@v2.5.0
+        with:
+          # Required, playbook filepath
+          playbook: playbook_dawidd6.yaml
+          # Optional, directory where playbooks live
+          directory: ./
+          # Optional, SSH private key
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Optional, SSH known hosts file content
+          known_hosts: .known_hosts
+          # Optional, encrypted vault password
+          vault_password: ${{ secrets.VAULT_PASSWORD }}
+          # Optional, literal inventory file contents
+          inventory: |
+            [master]
+              master-01 ansible_host=${{ secrets.SSH_HOST }} ansible_port=${{ secrets.SSH_PORT }} ansible_user=${{ secrets.SSH_USER }}
+          options: |
+            --verbose
